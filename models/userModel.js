@@ -5,6 +5,14 @@ const UserSchema = Schema({
     type: String,
     required: true,
   },
+  lastName: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+  },
   nick: {
     type: String,
   },
@@ -14,13 +22,18 @@ const UserSchema = Schema({
   },
   role: {
     type: String,
-    required: true,
+    default: "role_user",
   },
   image: {
     type: String,
+    default: "default.png",
   },
   createdAt: {
     type: Date,
-    required: true,
+    default: Date.now,
   },
 });
+
+const userModel = model("User", UserSchema);
+
+export { userModel };
