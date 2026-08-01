@@ -24,3 +24,6 @@ logs
 
 # Environment variables
 .env*
+
+# Uploaded files
+uploads/
