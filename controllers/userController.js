@@ -1,11 +1,8 @@
 import { userModel } from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import { createToken } from "../services/jwt.js";
-
-const users = async (req, res) => {
-  const usersFromDb = await userModel.find({});
-  return res.status(200).json(usersFromDb);
-};
+import fs from "fs/promises";
+import path from "path";
 
 const register = async (req, res) => {
   try {
@@ -160,4 +157,133 @@ const list = async (req, res) => {
   }
 };
 
-export { users, register, login, profile, list };
+const update = async (req, res) => {
+  try {
+    let userSession = req.user;
+    let userNewData = req.body;
+
+    delete userSession.iat;
+    delete userSession.exp;
+    delete userSession.role;
+    delete userSession.createdAt;
+
+    const usersFromDb = await userModel.find({
+      email: userNewData.email.toLowerCase(),
+    });
+
+    if (usersFromDb && usersFromDb.length >= 1) {
+      usersFromDb.map((u) => {
+        if (!u._id.equals(userSession.id)) {
+          return res.status(200).json({
+            status: "Success",
+            msg: "User with same email already exists",
+            u,
+          });
+        }
+      });
+    }
+
+    if (userNewData.password) {
+      let passwordHashed = await bcrypt.hash(userNewData.password, 10);
+
+      userNewData.password = passwordHashed;
+    }
+
+    const userUpdated = await userModel.findByIdAndUpdate(
+      userSession.id,
+      userNewData,
+      { new: true }
+    );
+
+    // should I update token? now the user stored in token is outdated
+
+    return res.status(200).json({
+      status: "Succes",
+      msg: "testing method update from userController",
+      user: userUpdated,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      status: "Error",
+      msg: "Error updating user",
+    });
+  }
+};
+
+const uploadImg = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(404).json({
+        status: "error",
+        msg: "Request lacks image",
+      });
+    }
+
+    const imgName = req.file.originalname;
+    const imageNameSplited = imgName.split(".");
+    const imgExtension = imageNameSplited[1];
+
+    const allowedExtensions = ["png", "jpg", "jpeg", "gif"];
+
+    if (!allowedExtensions.includes(imgExtension)) {
+      const filePath = req.file.path;
+
+      await fs.unlink(filePath);
+
+      return res.status(400).json({
+        status: "error",
+        msg: "extension is invalid!",
+      });
+    }
+
+    const userUpdated = await userModel.findOneAndUpdate(
+      { _id: req.user.id },
+      { image: req.file.filename },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      status: "success",
+      file: req.file,
+      userUpdated: userUpdated,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      status: "error",
+      msg: "Error uploading image",
+    });
+  }
+};
+
+const avatar = async (req, res) => {
+  try {
+    const { file } = req.params;
+
+    const fileName = path.basename(file);
+    const filePath = `./uploads/avatars/${fileName}`;
+
+    await fs.access(filePath);
+
+    return res.status(200).json({
+      status: "success",
+      msg: "hi from avatar",
+      file: fileName,
+      filePath,
+    });
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      return res.status(404).json({
+        status: "error",
+        msg: "file not found",
+      });
+    }
+    return res.status(500).json({
+      status: "error",
+      msg: "error getting avatar",
+    });
+  }
+};
+
+export { register, login, profile, list, update, uploadImg, avatar };
