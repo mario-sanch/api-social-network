@@ -1,12 +1,20 @@
 import { Schema, model } from "mongoose";
 
-const followSchema = Schema({
+const FollowSchema = Schema({
   user: {
-    type: String,
-    required: true,
+    type: Schema.ObjectId,
+    ref: "User",
   },
   followed: {
-    type: String,
-    required: true,
+    type: Schema.ObjectId,
+    ref: "User",
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
 });
+
+const FollowModel = model("follow", FollowSchema);
+
+export { FollowModel };

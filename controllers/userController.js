@@ -262,15 +262,15 @@ const avatar = async (req, res) => {
     const { file } = req.params;
 
     const fileName = path.basename(file);
-    const filePath = `./uploads/avatars/${fileName}`;
+    const filePath = path.resolve("./uploads/avatars", fileName);
 
-    await fs.access(filePath);
-
-    return res.status(200).json({
-      status: "success",
-      msg: "hi from avatar",
-      file: fileName,
-      filePath,
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        return res.status(404).json({
+          status: "error",
+          msg: "File not found",
+        });
+      }
     });
   } catch (err) {
     if (err.code === "ENOENT") {

@@ -7,6 +7,7 @@ connection();
 console.log("API NODE for social network started");
 
 import { userRouter } from "./routes/userRoutes.js";
+import { followRouter } from "./routes/followRoutes.js";
 
 // server
 const app = express();
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 app.use("/api", userRouter);
+app.use("/api", followRouter);
 
 // listen http requests
 app.listen(port, () => {
